@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.27.2'
+          cache: true
+
+      - name: Build
+        run: go build ./...
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Test
+        run: go test ./... -count=1
+
+      # The two artefacts are generated from deploy.cue. A change to the CUE
+      # without the regenerated files is the drift this catches.
+      - name: Generated drift
+        run: |
+          TMP=$(mktemp -d)
+          GO_OUT="$TMP/manifest.go" python3 tooling/codegen/build_types.py
+          OUT_PATH="$TMP/deploy.schema.json" python3 tooling/codegen/build_schema.py
+          if ! cmp -s "$TMP/manifest.go" manifest.go; then
+            echo "manifest.go drift — run: python3 tooling/codegen/build_types.py"
+            exit 1
+          fi
+          if ! cmp -s "$TMP/deploy.schema.json" schema/deploy.schema.json; then
+            echo "schema/deploy.schema.json drift — run: python3 tooling/codegen/build_schema.py"
+            exit 1
+          fi

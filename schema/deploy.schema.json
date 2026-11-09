@@ -1,0 +1,224 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Vyzorix deploy manifest (vyzorix.toml)",
+  "description": "The vyzorix.toml manifest, VYZORIX_DEPLOY_CONTRACT.md section 4. Generated from tooling/schema/deploy.cue; do not edit by hand.",
+  "$ref": "#/$defs/DeployManifest",
+  "$defs": {
+    "DeployManifest": {
+      "type": "object",
+      "properties": {
+        "device": {
+          "$ref": "#/$defs/DeployDevice"
+        },
+        "app": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/DeployApp"
+          },
+          "minItems": 1,
+          "maxItems": 32
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "device",
+        "app"
+      ]
+    },
+    "DeployDevice": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "org": {
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "org"
+      ]
+    },
+    "DeployApp": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]*$",
+          "minLength": 1,
+          "maxLength": 32
+        },
+        "cmd": {
+          "type": "string",
+          "pattern": "^/"
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65535
+        },
+        "expose": {
+          "type": "string",
+          "enum": [
+            "loopback",
+            "lan",
+            "cloud"
+          ]
+        },
+        "autostart": {
+          "type": "boolean"
+        },
+        "purge": {
+          "type": "boolean"
+        },
+        "env": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "secrets": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "const": ""
+          }
+        },
+        "pwa": {
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "$ref": "#/$defs/DeployPWA"
+            }
+          ]
+        },
+        "artifact": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/DeployArtifact"
+          }
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "cmd"
+      ]
+    },
+    "DeployArtifact": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]*$",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "url": {
+          "type": "string",
+          "pattern": "^https://"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "arch": {
+          "type": "string",
+          "enum": [
+            "arm64-v8a",
+            "armeabi-v7a",
+            "x86_64"
+          ]
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "dir",
+            "webroot"
+          ]
+        },
+        "size": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "url",
+        "sha256"
+      ]
+    },
+    "DeployPWA": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "short_name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "theme_color": {
+          "type": "string"
+        },
+        "background_color": {
+          "type": "string"
+        },
+        "display": {
+          "type": "string",
+          "enum": [
+            "standalone",
+            "fullscreen",
+            "minimal-ui",
+            "browser"
+          ]
+        },
+        "orientation": {
+          "type": "string"
+        },
+        "start_url": {
+          "type": "string"
+        },
+        "icons": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/DeployIcon"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "DeployIcon": {
+      "type": "object",
+      "properties": {
+        "src": {
+          "type": "string"
+        },
+        "sizes": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "src",
+        "sizes",
+        "type"
+      ]
+    }
+  }
+}
