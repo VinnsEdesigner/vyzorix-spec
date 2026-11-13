@@ -28,7 +28,7 @@ type BuildArtifact struct {
 	File       string            `json:"file,omitempty"`
 	GlibcFloor string            `json:"glibc_floor,omitempty"`
 	Kind       string            `json:"kind,omitempty"`
-	Lang       string            `json:"lang"`
+	Lang       AdapterKind       `json:"lang"`
 	Name       string            `json:"name"`
 	Opts       map[string]string `json:"opts,omitempty"`
 	Out        string            `json:"out,omitempty"`
@@ -40,3 +40,22 @@ type BuildArtifact struct {
 	Purge      bool              `json:"purge,omitempty"`
 	Pwa        bool              `json:"pwa,omitempty"`
 }
+
+type AdapterKind string
+
+const (
+	AdapterKindGolang        AdapterKind = "golang"
+	AdapterKindRust          AdapterKind = "rust"
+	AdapterKindCpp           AdapterKind = "cpp"
+	AdapterKindNode          AdapterKind = "node"
+	AdapterKindNodeWebroot   AdapterKind = "node-webroot"
+	AdapterKindDeno          AdapterKind = "deno"
+	AdapterKindBun           AdapterKind = "bun"
+	AdapterKindZig           AdapterKind = "zig"
+	AdapterKindDotnet        AdapterKind = "dotnet"
+	AdapterKindRuby          AdapterKind = "ruby"
+	AdapterKindPhp           AdapterKind = "php"
+	AdapterKindPython        AdapterKind = "python"
+	AdapterKindJvm           AdapterKind = "jvm"
+	AdapterKindContainerfile AdapterKind = "containerfile"
+)

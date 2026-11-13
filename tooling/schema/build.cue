@@ -3,6 +3,10 @@ package vyzorix
 // The build recipe schema (vyzorix.build.toml). Authored once: build_build_types.py
 // generates the Go types, build_build_schema.py publishes the JSON Schema.
 
+// The adapter a `[[artifact]]` names: one per supported runtime, plus the
+// Containerfile escape hatch. Generated into Go as `AdapterKind`.
+#AdapterKind: "golang" | "rust" | "cpp" | "node" | "node-webroot" | "deno" | "bun" | "zig" | "dotnet" | "ruby" | "php" | "python" | "jvm" | "containerfile"
+
 // The recipe: build settings and one or more artifacts.
 #BuildRecipe: {
         build: #BuildSettings
@@ -23,7 +27,7 @@ package vyzorix
 #BuildArtifact: {
         app: string & =~"^[a-z0-9][a-z0-9-]*$" & >=1 & <=32
         name: string & =~"^[a-z0-9][a-z0-9-]*$" & >=1 & <=64
-        lang: string & "golang" | "rust" | "cpp" | "node-webroot" | "python" | "jvm" | "containerfile"
+        lang: #AdapterKind
         cmd?: string & =~"^/"
         path?: string
         build?: string

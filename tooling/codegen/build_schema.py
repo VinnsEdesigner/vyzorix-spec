@@ -105,6 +105,11 @@ def field_schema(field):
         return apply_constraints({}, constraints, "any")
 
     if field.get("is_nested"):
+        # A nested ref to a struct is a $ref; a nested ref to an enum is inlined
+        # as a string enum, so the published field shape is the same string-enum
+        # it was before the enum was named (no $ref the client must resolve).
+        if ftype in ENUM_NAMES:
+            return {"type": "string", "enum": ENUM_NAMES[ftype]}
         return {"$ref": f"#/$defs/{ftype}"}
 
     if ftype.startswith("[..."):
@@ -130,6 +135,9 @@ def member_schema(member):
 
 
 def type_schema(schema):
+    if schema.get("kind") == "enum":
+        return {"type": "string", "enum": schema["values"]}
+
     props = {}
     required = []
 
@@ -145,9 +153,14 @@ def type_schema(schema):
     return out
 
 
+ENUM_NAMES = {}
+
+
 def main():
+    global ENUM_NAMES
     schemas = parse_cue_file(CUE_PATH)
-    defs = {s["name"]: type_schema(s) for s in schemas}
+    ENUM_NAMES = {s["name"]: s["values"] for s in schemas if s.get("kind") == "enum"}
+    defs = {s["name"]: type_schema(s) for s in schemas if s.get("kind") != "enum"}
 
     if ROOT not in defs:
         print(f"deploy.cue has no #{ROOT}", file=sys.stderr)

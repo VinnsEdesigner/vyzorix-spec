@@ -10,3 +10,7 @@
 
 # Output of the build
 /dist/
+
+# Python bytecode from the codegen scripts
+__pycache__/
+*.pyc

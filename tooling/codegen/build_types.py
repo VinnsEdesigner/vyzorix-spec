@@ -26,6 +26,7 @@ The parser is strict: any field line it cannot recognize is a hard error, so a
 typo or an unsupported CUE construct fails loudly instead of silently dropping
 the field from the generated struct.
 """
+import json
 import os
 import re
 import sys
@@ -62,10 +63,16 @@ CUE_TO_GO = {
 
 
 def split_types(content):
-    """Split a .cue file into (name, body) type blocks with brace-balanced
-    bodies — a naive `[^}]*` stops at the `}` inside an open map
-    (`{[string]: _}`) and silently truncates those structs."""
+    """Split a .cue file into (name, body, kind) definitions.
+
+    A struct has a brace-balanced body — a naive `[^}]*` stops at the `}` inside
+    an open map (`{[string]: _}`) and silently truncates those structs. A scalar
+    definition (an enum: `#Name: "a" | "b"`) has a single-line body instead.
+    """
     types = []
+    seen = set()
+
+    # Structs: brace-balanced.
     for m in re.finditer(r"#(\w+):\s*\{", content):
         name = m.group(1)
         depth = 1
@@ -76,7 +83,18 @@ def split_types(content):
             elif content[i] == "}":
                 depth -= 1
             i += 1
-        types.append((name, content[m.end():i - 1]))
+        types.append((name, content[m.end():i - 1], "struct"))
+        seen.add(name)
+
+    # Enums: a top-level `#Name:` followed by a `|`-separated list of quoted
+    # strings. Anchored to line start so a struct field is never mistaken for one.
+    for m in re.finditer(r'^#(\w+):\s*((?:"[^"]*"\s*\|\s*)*"[^"]*")', content, re.M):
+        name = m.group(1)
+        if name in seen:
+            continue
+        types.append((name, m.group(2), "enum"))
+        seen.add(name)
+
     return types
 
 
@@ -87,7 +105,13 @@ def parse_cue_file(filepath):
 
     # First pass: collect all type definitions (including nested refs)
     type_defs = {}
-    for name, body in split_types(content):
+    kinds = {}
+    for name, body, kind in split_types(content):
+        kinds[name] = kind
+        if kind == "enum":
+            type_defs[name] = [m.strip().strip('"') for m in body.split("|")]
+            continue
+
         fields = []
 
         for line in body.strip().split("\n"):
@@ -197,9 +221,28 @@ def parse_cue_file(filepath):
     # Second pass: convert to schema list (keep nested refs as type references, don't inline)
     schemas = []
     for name, fields in type_defs.items():
-        schemas.append({"name": name, "fields": fields})
+        if kinds.get(name) == "enum":
+            schemas.append({"name": name, "kind": "enum", "values": fields})
+        else:
+            schemas.append({"name": name, "kind": "struct", "fields": fields})
 
     return schemas
+
+
+def to_go_enum(schema):
+    """Convert an enum schema to a Go string type plus its constants.
+
+    The wire value is the string (the JSON tag is the string itself), so the type
+    is a named string; the constants give callers a compile-time name for each
+    allowed value. A `Kind`-suffixed name keeps the type distinct from a struct.
+    """
+    name = schema["name"]
+    lines = [f"type {name} string", "", "const ("]
+    for value in schema["values"]:
+        const_name = name + "".join(part.capitalize() for part in re.split(r"[-_]", value))
+        lines.append(f"\t{const_name} {name} = {json.dumps(value)}")
+    lines.append(")")
+    return "\n".join(lines)
 
 
 def to_go_struct(schema):
@@ -315,7 +358,10 @@ def main():
         f.write("\n")
         f.write(f"package {GO_PKG}\n\n")
         for schema in all_schemas:
-            f.write(to_go_struct(schema) + "\n\n")
+            if schema.get("kind") == "enum":
+                f.write(to_go_enum(schema) + "\n\n")
+            else:
+                f.write(to_go_struct(schema) + "\n\n")
 
     print(f"\nGenerated {len(all_schemas)} types -> {GO_OUT}")
 

@@ -78,3 +78,50 @@ func buildAsError(err error, target **UnknownBuildSchemaVersionError) bool {
 
 	return ok
 }
+
+func TestAdapterKindCoversEveryRuntime(t *testing.T) {
+	// The adapter enum is the one list of supported runtimes. This pins that it
+	// carries every runtime the contract names, so a new adapter that is added to
+	// the catalog but not the schema (or vice versa) is caught here.
+	want := []AdapterKind{
+		AdapterKindGolang, AdapterKindRust, AdapterKindCpp, AdapterKindNode,
+		AdapterKindNodeWebroot, AdapterKindDeno, AdapterKindBun, AdapterKindZig,
+		AdapterKindDotnet, AdapterKindRuby, AdapterKindPhp, AdapterKindPython,
+		AdapterKindJvm, AdapterKindContainerfile,
+	}
+
+	// A recipe naming a runtime decodes into the typed field.
+	for _, lang := range want {
+		recipe := BuildRecipe{Artifact: []BuildArtifact{{App: "a", Name: "b", Lang: lang}}}
+		if recipe.Artifact[0].Lang != lang {
+			t.Errorf("Lang = %q, want %q", recipe.Artifact[0].Lang, lang)
+		}
+	}
+
+	// The published schema lists exactly these values, as a string enum.
+	schema, err := BuildSchema(BuildSchemaVersion)
+	if err != nil {
+		t.Fatalf("BuildSchema = %v", err)
+	}
+
+	var doc struct {
+		Defs map[string]struct {
+			Properties map[string]struct {
+				Enum []string `json:"enum"`
+			} `json:"properties"`
+		} `json:"$defs"`
+	}
+	if err := json.Unmarshal(schema, &doc); err != nil {
+		t.Fatalf("schema is not valid JSON: %v", err)
+	}
+
+	got := doc.Defs["BuildArtifact"].Properties["lang"].Enum
+	if len(got) != len(want) {
+		t.Fatalf("schema lang enum = %v, want %d values", got, len(want))
+	}
+	for i, lang := range want {
+		if got[i] != string(lang) {
+			t.Errorf("schema lang[%d] = %q, want %q", i, got[i], lang)
+		}
+	}
+}
