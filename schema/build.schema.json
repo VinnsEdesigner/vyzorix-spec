@@ -1,0 +1,171 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Vyzorix build recipe (vyzorix.build.toml)",
+  "description": "The vyzorix.build.toml recipe. Generated from tooling/schema/build.cue; do not edit by hand.",
+  "$ref": "#/$defs/BuildRecipe",
+  "$defs": {
+    "BuildRecipe": {
+      "type": "object",
+      "properties": {
+        "build": {
+          "$ref": "#/$defs/BuildSettings"
+        },
+        "artifact": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/BuildArtifact"
+          },
+          "minItems": 1,
+          "maxItems": 16
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "build",
+        "artifact"
+      ]
+    },
+    "BuildSettings": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "abi": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "suite": {
+          "type": "string"
+        },
+        "os": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "BuildArtifact": {
+      "type": "object",
+      "properties": {
+        "app": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]*$",
+          "minLength": 1,
+          "maxLength": 32
+        },
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]*$",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "lang": {
+          "type": "string",
+          "enum": [
+            "golang",
+            "rust",
+            "cpp",
+            "node-webroot",
+            "python",
+            "jvm",
+            "containerfile"
+          ]
+        },
+        "cmd": {
+          "type": "string",
+          "pattern": "^/"
+        },
+        "path": {
+          "type": "string"
+        },
+        "build": {
+          "type": "string"
+        },
+        "dist": {
+          "type": "string"
+        },
+        "file": {
+          "type": "string"
+        },
+        "out": {
+          "type": "string"
+        },
+        "arch": {
+          "type": "string",
+          "enum": [
+            "arm64-v8a",
+            "armeabi-v7a",
+            "x86_64",
+            "all"
+          ]
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "dir",
+            "webroot"
+          ]
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65535
+        },
+        "expose": {
+          "type": "string",
+          "enum": [
+            "loopback",
+            "lan",
+            "cloud"
+          ]
+        },
+        "glibc_floor": {
+          "type": "string"
+        },
+        "env": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "libs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "static": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "opts": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "autostart": {
+          "type": "boolean"
+        },
+        "purge": {
+          "type": "boolean"
+        },
+        "pwa": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "app",
+        "name",
+        "lang"
+      ]
+    }
+  }
+}

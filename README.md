@@ -14,21 +14,27 @@ its release build must resolve its dependencies without credentials.
 | Path | What it is |
 | --- | --- |
 | `tooling/schema/deploy.cue` | The manifest, authored once in CUE. |
-| `manifest.go` | Generated Go wire types. Do not edit. |
-| `schema/deploy.schema.json` | Generated JSON Schema. Do not edit. |
-| `schema.go` | `Schema(version)` and `SchemaVersion`; embeds the JSON Schema. |
+| `tooling/schema/build.cue` | The build recipe, authored once in CUE. |
+| `manifest.go` | Generated manifest wire types. Do not edit. |
+| `build.go` | Generated build-recipe wire types. Do not edit. |
+| `schema/deploy.schema.json` | Generated manifest JSON Schema. Do not edit. |
+| `schema/build.schema.json` | Generated build-recipe JSON Schema. Do not edit. |
+| `schema.go` | `Schema(version)` and `SchemaVersion`; embeds the manifest schema. |
+| `build_schema.go` | `BuildSchema(version)` and `BuildSchemaVersion`; embeds the recipe schema. |
 
 ## Regenerate
 
-Both artefacts are generated from `deploy.cue`:
+All four artefacts are generated from CUE — one generator, two documents:
 
 ```sh
-python3 tooling/codegen/build_types.py    # -> manifest.go
-python3 tooling/codegen/build_schema.py   # -> schema/deploy.schema.json
+python3 tooling/codegen/build_types.py         # deploy.cue  -> manifest.go
+python3 tooling/codegen/build_schema.py        # deploy.cue  -> schema/deploy.schema.json
+python3 tooling/codegen/build_build_types.py   # build.cue   -> build.go
+python3 tooling/codegen/build_build_schema.py  # build.cue   -> schema/build.schema.json
 ```
 
-The build gate re-runs both and fails on drift, so a change to `deploy.cue` must
-be accompanied by the regenerated files.
+The build gate re-runs all four and fails on drift, so a change to either `.cue`
+must be accompanied by the regenerated files.
 
 ## Use
 

@@ -26,18 +26,21 @@ jobs:
       - name: Test
         run: go test ./... -count=1
 
-      # The two artefacts are generated from deploy.cue. A change to the CUE
+      # The four artefacts are generated from the CUE sources. A change to a CUE
       # without the regenerated files is the drift this catches.
       - name: Generated drift
         run: |
           TMP=$(mktemp -d)
           GO_OUT="$TMP/manifest.go" python3 tooling/codegen/build_types.py
           OUT_PATH="$TMP/deploy.schema.json" python3 tooling/codegen/build_schema.py
-          if ! cmp -s "$TMP/manifest.go" manifest.go; then
-            echo "manifest.go drift — run: python3 tooling/codegen/build_types.py"
-            exit 1
-          fi
-          if ! cmp -s "$TMP/deploy.schema.json" schema/deploy.schema.json; then
-            echo "schema/deploy.schema.json drift — run: python3 tooling/codegen/build_schema.py"
-            exit 1
-          fi
+          GO_OUT="$TMP/build.go" python3 tooling/codegen/build_build_types.py
+          OUT_PATH="$TMP/build.schema.json" python3 tooling/codegen/build_build_schema.py
+          for pair in "manifest.go:$TMP/manifest.go" "schema/deploy.schema.json:$TMP/deploy.schema.json" \
+                      "build.go:$TMP/build.go" "schema/build.schema.json:$TMP/build.schema.json"; do
+            committed="${pair%%:*}"; generated="${pair##*:}"
+            if ! cmp -s "$generated" "$committed"; then
+              echo "$committed drift — regenerate from its .cue source"
+              exit 1
+            fi
+          done
+          rm -rf "$TMP"

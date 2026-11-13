@@ -19,10 +19,18 @@ OUT_PATH = os.environ.get("OUT_PATH", "schema/deploy.schema.json")
 
 # The schema version. It is the {version} segment of
 # GET /v1/deploy/schema/{version}, and the value of SchemaVersion in schema.go.
-VERSION = "1"
+VERSION = os.environ.get("VERSION", "1")
 
-# The root type: the manifest is this object.
-ROOT = "DeployManifest"
+# The root type.
+ROOT = os.environ.get("ROOT", "DeployManifest")
+
+# The title/description the published schema carries.
+TITLE = os.environ.get("TITLE", "Vyzorix deploy manifest (vyzorix.toml)")
+DESCRIPTION = os.environ.get(
+    "DESCRIPTION",
+    "The vyzorix.toml manifest, VYZORIX_DEPLOY_CONTRACT.md section 4. "
+    "Generated from tooling/schema/deploy.cue; do not edit by hand.",
+)
 
 PRIMITIVES = {
     "int": "integer",
@@ -151,11 +159,8 @@ def main():
     # client keys the document by the server URL it fetched it from instead.
     doc = {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
-        "title": "Vyzorix deploy manifest (vyzorix.toml)",
-        "description": (
-            "The vyzorix.toml manifest, VYZORIX_DEPLOY_CONTRACT.md section 4. "
-            "Generated from tooling/schema/deploy.cue; do not edit by hand."
-        ),
+        "title": TITLE,
+        "description": DESCRIPTION,
         "$ref": f"#/$defs/{ROOT}",
         "$defs": defs,
     }
